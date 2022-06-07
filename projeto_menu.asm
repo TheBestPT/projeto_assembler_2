@@ -21,6 +21,8 @@
     zero: .single 0.0
 .align 4
     one: .single 1.0
+.align 4
+    dois: .single 0.0
 /*
 SQRT VARIABLES
  */
@@ -173,10 +175,12 @@ _callPowInt:
     PUSH {R0, LR}
     LDR R1, =testNumber
     VLDR S0, [R1]
-    MOV R0, #2
+    //MOV R0, #2
+    LDR R1, =dois
+    VLDR S1, [R1]
     
 
-    BL _powInt
+    BL _powInt2
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -262,83 +266,6 @@ _fabs:
 BX LR
 
 
-/*
-_fatorial:
-    PUSH {LR}
-    @S1 INSERTED FATORIAL
-    VMOV.F32 S1, S0
-    @S6 ONE IN SINGLE
-    LDR R0, =one
-    VLDR S6, [R0] 
-    @S7 ZERO IN SINGLE
-    LDR R0, =zero
-    VLDR S7, [R0] 
-    @S8 INCREMENTOR FOR begin_fatorial_loop
-    VMOV.F32 S8, S7
-    begin_fatorial_loop:
-        @S2 
-        //VMOV.F32 S2, S1
-        @S4 DECREMENT fatorial_loop
-        @S4 DECREMENTOR fatorial_loop
-        VADD.F32 S4, S8
-        //VMOV.F32 S10, S7
-        VMOV.F32 S3, S4
-        fatorial_loop:
-            VMUL.F32 S3, S3, S4
-            VSUBGE.F32 S4, S6
-            VCMP.F32 S4, S7
-            VMRS APSR_nzcv, FPSCR
-        BGT fatorial_loop
-        
-        
-        VCMP.F32 S8, S1
-        VMRS APSR_nzcv, FPSCR
-        VADDNE.F32 S8, S6
-    BNE begin_fatorial_loop
-    VMOV.F32 S0, S3
-
-    POP {LR}
-BX LR
-*/
-
-/*
-_fatorial:
-    PUSH {LR}
-    VPUSH.F32 {S1-S7}
-    @S2 fatorial
-    VMOV.F32 S2, S0
-
-    LDR R0, =zero
-    VLDR S0, [R0]
-    //VMOV.F32 S0, S2
-
-    LDR R0, =one
-    VLDR S1, [R0]
-
-    @s3 incrementor begin_fatorial_loop
-    VMOV.F32 S3, S0 @i = 0
-    begin_fatorial_loop:
-        VMOV.F32 S4, S3 @j = i
-        VSUB.F32 S4, S1 @ j -1
-        VMUL.F32 S7, s4 @OUT = I
-        fatorial_loop:
-            VMUL.F32 S7, S4
-            VSUB.F32 S4, S1
-            VCMP.F32 S4, S0
-            VMRS APSR_nzcv, FPSCR
-        BGT fatorial_loop
-
-        
-        VCMP.F32 S3, S2 
-        VADD.F32 S3, S1 @ i++
-        VMRS APSR_nzcv, FPSCR
-    BLT begin_fatorial_loop    
-    VMOV.F32 S0, S7
-    VPOP.F32 {S1-S7}    
-    POP {LR}
-BX LR*/
-
-
 
 _fatorial:
   PUSH {LR}
@@ -377,6 +304,7 @@ _fatorial:
     Retrun
     S0 - resultado
  */
+ 
 _powInt:
     PUSH {LR}
     LDR  R2, =one
@@ -406,6 +334,47 @@ _powInt:
     VMOV.F32 S0, S3
     POP {LR}
 BX LR
+
+
+_powInt2:
+    PUSH {LR}
+    LDR  R2, =one
+    VLDR S2, [R2]
+    LDR R2, =zero
+    VLDR S4, [R2]
+    //MOV R1, #0
+    /*CMP R0, #0
+    CMP R0, #2
+    SUBGE R0, #1*/
+    @VERIFY IF ITS 1
+    VCMP.F32 S1, S2
+    VMRS APSR_nzcv, FPSCR
+    POP {LR}
+    BXEQ LR
+    @VERIFY IF IS 0
+    PUSH {LR}
+    VCMP.F32 S1, S4
+    VMRS APSR_nzcv, FPSCR
+    VMOV.F32 S0, S2
+    POP {LR}
+    BXEQ LR
+    PUSH {LR}
+    VSUB.F32 S1, S2
+    VMOV.F32 S3, S0
+    powInt2_loop:
+        VMUL.F32 S3, S3, S0
+        //ADD R1, #1                
+        VADD.F32 S4, S2
+        //CMP R1, R0 
+        VCMP.F32 S4, S1
+        VMRS APSR_nzcv, FPSCR
+    BNE powInt2_loop
+    VMOV.F32 S0, S3
+    POP {LR}
+BX LR
+
+
+
 
 
 
