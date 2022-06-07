@@ -157,7 +157,7 @@ BX LR
 
 _callFatorial:
     PUSH {R0, LR}
-    LDR R1, =testNumber
+    LDR R1, =one
     VLDR S0, [R1]
 
     
@@ -271,11 +271,34 @@ _fatorial:
   PUSH {LR}
   VPUSH.F32 {S1-S5}
 
+    
+
   LDR  R0, =zero
   VLDR S1, [R0]                  @ S1 começa em 0 mas incrementa.
   VLDR S4, [R0]                  @ S4 é uma constante de 0.
   LDR  R0, =one
   VLDR S2, [R0]                  @ S2 é uma constante de 1.
+
+/*
+  VCMP.F32 S0, S1
+  VMRS APSR_nzcv, FPSCR
+  VMOVEQ.F32 S0, S2
+  VCMP.F32 S0, S2
+  VMRS APSR_nzcv, FPSCR
+  VMOVEQ.F32 S0, S2
+  VPOP.F32 {S1-S5}
+  POP {LR}
+  BXEQ LR
+  PUSH {LR}
+  VPUSH.F32 {S1-S5}*/
+
+    VCMP.F32 S0, S1
+    VMRS APSR_nzcv, FPSCR
+    VMOVEQ.F32 S0, S2
+    @Comparar com 1
+    VCMP.F32 S0, S2
+    VMRS APSR_nzcv, FPSCR
+    VMOVEQ.F32 S0, S2
 
   factorial_loop:
     VMOV.F32 S3, S1              @ S3 = i
@@ -291,8 +314,29 @@ _fatorial:
     VADD.F32 S1, S2              @ S1 += 1.0
     VMRS     APSR_nzcv, FPSCR
     BLT      factorial_loop
-  VMOV.F32 S0, S5
-  VPOP.F32 {S1-S5}
+    @Comparar com zero
+    /*VCMP.F32 S0, S1
+    VMRS APSR_nzcv, FPSCR
+    VMOVEQ.F32 S0, S2
+    @Comparar com 1
+    VCMP.F32 S0, S2
+    VMRS APSR_nzcv, FPSCR
+    VMOVEQ.F32 S0, S2
+    VMRS APSR_nzcv, FPSCR
+    VMOVNE.F32 S0, S5*/
+
+    /*VCMP.F32 S0, S1
+    VMRS APSR_nzcv, FPSCR
+    VMOVNE.F32 S0, S5
+    @Comparar com 1
+    VCMP.F32 S0, S2
+    VMRS APSR_nzcv, FPSCR
+    VMOVNE.F32 S0, S5
+    VMRS APSR_nzcv, FPSCR*/
+    VCMP.F32 S0, S2
+    VMRS APSR_nzcv, FPSCR
+    VMOVNE.F32 S0, S5
+    VPOP.F32 {S1-S5}
     POP {LR}
   BX   LR
 
@@ -406,7 +450,7 @@ _exp:
         MOV R0, R4
         CMP R0, #1
         @Params - R0, S0
-        BLNE _powInt
+        BLNE _powInt2
         @Return S0
         VMOV.F32 S5, S0 @pow
         VMOV.F32 S0, S4
