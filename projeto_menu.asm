@@ -148,6 +148,9 @@ main:
     CMP R0, #8
     BLEQ _callHypot
 
+    CMP R0, #9
+    BLEQ _callPowInt
+
     POP {LR}
     BX LR
 
@@ -360,6 +363,22 @@ _callHypot:
     VLDR S1, [R1]
 
     BL _hypot
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callPowInt:
+    PUSH {R0, LR}
+    LDR R1, =testNumber
+    VLDR S0, [R1]
+    MOV R0, #3
+    
+
+    BL _powInt
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -738,4 +757,34 @@ BX LR
 
 
 
+
+_powInt:
+    PUSH {LR}
+    LDR  R2, =one
+    VLDR S1, [R2]
+
+    MOV R1, #0
+    CMP R0, #0
+    BEQ end_powint_zero
+    CMP R0, #1
+    BEQ end_powint
+
+    SUB R0, #1
+    VMOV.F32 S3, S0
+    powInt_loop:
+        VMUL.F32 S3, S3, S0
+        ADD R1, #1                
+        CMP R1, R0 
+    BNE powInt_loop
+    VMOV.F32 S0, S3
+    end_powint_zero:
+        CMP R0, #0
+        BNE end_powint
+        VMOV.F32 S0, S1
+        
+        POP {LR}
+        BX LR
+    end_powint:
+        POP {LR}
+    BX LR
 
