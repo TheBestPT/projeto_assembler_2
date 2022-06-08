@@ -22,7 +22,7 @@
 .align 4
     one: .single 1.0
 .align 4
-    dois: .single 0.0
+    dois: .single 2.0
 /*
 SQRT VARIABLES
  */
@@ -157,7 +157,7 @@ BX LR
 
 _callFatorial:
     PUSH {R0, LR}
-    LDR R1, =one
+    LDR R1, =testNumber
     VLDR S0, [R1]
 
     
@@ -268,77 +268,45 @@ BX LR
 
 
 _fatorial:
-  PUSH {LR}
-  VPUSH.F32 {S1-S5}
+    PUSH {LR}
+    VPUSH.F32 {S1-S5}
 
-    
+        
 
-  LDR  R0, =zero
-  VLDR S1, [R0]                  @ S1 começa em 0 mas incrementa.
-  VLDR S4, [R0]                  @ S4 é uma constante de 0.
-  LDR  R0, =one
-  VLDR S2, [R0]                  @ S2 é uma constante de 1.
+    LDR  R0, =zero
+    VLDR S1, [R0]                  @ S1 começa em 0 mas incrementa.
+    VLDR S4, [R0]                  @ S4 é uma constante de 0.
+    LDR  R0, =one
+    VLDR S2, [R0]                  @ S2 é uma constante de 1.
 
-/*
-  VCMP.F32 S0, S1
-  VMRS APSR_nzcv, FPSCR
-  VMOVEQ.F32 S0, S2
-  VCMP.F32 S0, S2
-  VMRS APSR_nzcv, FPSCR
-  VMOVEQ.F32 S0, S2
-  VPOP.F32 {S1-S5}
-  POP {LR}
-  BXEQ LR
-  PUSH {LR}
-  VPUSH.F32 {S1-S5}*/
+        VCMP.F32 S0, S1
+        VMRS APSR_nzcv, FPSCR
+        VMOVEQ.F32 S0, S2
+        @Comparar com 1
+        VCMP.F32 S0, S2
+        VMRS APSR_nzcv, FPSCR
+        VMOVEQ.F32 S0, S2
 
-    VCMP.F32 S0, S1
-    VMRS APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S2
-    @Comparar com 1
-    VCMP.F32 S0, S2
-    VMRS APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S2
-
-  factorial_loop:
-    VMOV.F32 S3, S1              @ S3 = i
-    VMOV.F32 S5, S3              @ Criar cópia de S3 para S5. S5 é out.
-    VSUB.F32 S3, S2              @ S3 -= 1.0
-    factorial_loop_2:
-      VMUL.F32 S5, S3            @ S5 *= S3
-      VSUB.F32 S3, S2            @ S3 -= 1.0 (decrementa, i--)
-      VCMP.F32 S3, S4            @ S3 > 0
-      VMRS     APSR_nzcv, FPSCR
-      BGT      factorial_loop_2
-    VCMP.F32 S1, S0              @ i < range 
-    VADD.F32 S1, S2              @ S1 += 1.0
-    VMRS     APSR_nzcv, FPSCR
+    factorial_loop:
+        VMOV.F32 S3, S1              @ S3 = i
+        VMOV.F32 S5, S3              @ Criar cópia de S3 para S5. S5 é out.
+        VSUB.F32 S3, S2              @ S3 -= 1.0
+        factorial_loop_2:
+            VMUL.F32 S5, S3            @ S5 *= S3
+            VSUB.F32 S3, S2            @ S3 -= 1.0 (decrementa, i--)
+            VCMP.F32 S3, S4            @ S3 > 0
+            VMRS     APSR_nzcv, FPSCR
+        BGT      factorial_loop_2
+        VCMP.F32 S1, S0              @ i < range 
+        VADD.F32 S1, S2              @ S1 += 1.0
+        VMRS     APSR_nzcv, FPSCR
     BLT      factorial_loop
-    @Comparar com zero
-    /*VCMP.F32 S0, S1
-    VMRS APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S2
-    @Comparar com 1
-    VCMP.F32 S0, S2
-    VMRS APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S2
-    VMRS APSR_nzcv, FPSCR
-    VMOVNE.F32 S0, S5*/
-
-    /*VCMP.F32 S0, S1
-    VMRS APSR_nzcv, FPSCR
-    VMOVNE.F32 S0, S5
-    @Comparar com 1
-    VCMP.F32 S0, S2
-    VMRS APSR_nzcv, FPSCR
-    VMOVNE.F32 S0, S5
-    VMRS APSR_nzcv, FPSCR*/
-    VCMP.F32 S0, S2
-    VMRS APSR_nzcv, FPSCR
-    VMOVNE.F32 S0, S5
-    VPOP.F32 {S1-S5}
-    POP {LR}
-  BX   LR
+        VCMP.F32 S0, S2
+        VMRS APSR_nzcv, FPSCR
+        VMOVNE.F32 S0, S5
+        VPOP.F32 {S1-S5}
+        POP {LR}
+BX   LR
 
 /*
     powInt expoentes inteiros
@@ -380,6 +348,14 @@ _powInt:
 BX LR
 
 
+/*
+    powInt expoentes inteiros
+    Parametros
+    S1 - expoente
+    S0 - base
+    Retrun
+    S0 - resultado
+ */
 _powInt2:
     PUSH {LR}
     LDR  R2, =one
@@ -399,7 +375,7 @@ _powInt2:
     PUSH {LR}
     VCMP.F32 S1, S4
     VMRS APSR_nzcv, FPSCR
-    VMOV.F32 S0, S2
+    VMOVEQ.F32 S0, S2
     POP {LR}
     BXEQ LR
     PUSH {LR}
@@ -425,10 +401,8 @@ BX LR
 
 _exp:
     PUSH {LR}
-    @S1 - 1
     LDR R1, =one
     VLDR S1, [R1]
-
 
     LDR R1, =limit
     VLDR S8, [R1]
@@ -438,19 +412,26 @@ _exp:
     @S4 - X
     
     VMOV.F32 S4, S0
-    MOV R4, #1 @Iterador
+    //MOV R4, #1 @Iterador
+    VMOV.F32 S9, S0
 
-    /*
-    MOV R0, #1
-    CMP R0, #1
-    @Params - R0, S0
-    BLNE _powInt*/
+    
+    /*LDR R1, =dois
+    VLDR S1, [R1]
+    //CMP R0, #1
+    @Params - S0, S1
+    BL _powInt2*/
+    @S1 - 1
+    
     
     exp_loop:
-        MOV R0, R4
-        CMP R0, #1
+        //MOV R0, R4
+        //CMP R0, #1
+        VMOV.F32 S1, S9
         @Params - R0, S0
         BLNE _powInt2
+        LDR R1, =one
+        VLDR S1, [R1]
         @Return S0
         VMOV.F32 S5, S0 @pow
         VMOV.F32 S0, S4
@@ -458,11 +439,12 @@ _exp:
         VMOV.F32 S6, S0@FATORIAL
         VDIV.F32 S7, S5, S6
         VADD.F32 S3, S7
-        ADD R4, #1
+        //ADD R4, #1
+        VADD.F32 S9, S1
         VCMP.F32 S7, S8
         VMRS APSR_nzcv, FPSCR
     BGT exp_loop
-    VMOV.F32 S0, S3
+    VMOV.F32 S0, S6
 
 
     POP {LR}
