@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5- sinh\n6 - cosh\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5- sinh\n6 - cosh\n7 - tanh\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -72,6 +72,15 @@ COSH VARIABLES
 
 .align 4
     cosh_print: .asciz "Insert (x) value for cosh(x): "
+
+/*
+TANH VARIABLES
+ */
+
+.align 4
+    tanh_print: .asciz "Insert (x) value for cosh(x): "
+
+
 @External C functions
 
 .global scanf
@@ -121,6 +130,9 @@ main:
 
     CMP R0, #6
     BLEQ _callCosh
+
+    CMP R0, #7
+    BLEQ _callTanh
 
     POP {LR}
     BX LR
@@ -264,6 +276,31 @@ _callCosh:
     VLDR S0, [R1]
 
     BL _cosh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callTanh:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =tanh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _tanh
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -504,6 +541,10 @@ _sinh:
     POP {LR}
 BX LR
 
+
+/*
+    (1 - E^-2X ) / 2E^-X
+ */
 _cosh:
     PUSH {LR}
     VPUSH.F32 {S1-S3}
@@ -547,5 +588,57 @@ _cosh:
     //VNEG.F32 S0, S0
 
     VPOP.F32 {S1-S3}
+    POP {LR}
+BX LR
+
+
+/*
+    (1 - E^-2X ) / (1 + E^-2X )
+ */
+_tanh:
+PUSH {LR}
+    VPUSH.F32 {S1-S8}
+    LDR R1, =one
+    VLDR S1, [R1]
+
+    LDR R1, =zero
+    VLDR S2, [R1]
+
+    VMOV.F32 S5, S0@x
+
+    @E^-2X
+    /////////////////////////////////////////
+    LDR R1, =two
+    VLDR S4, [R1]
+    VMUL.F32 S0, S5, S4
+    //VNEG.F32 S0, S0
+    BL _exp
+    VDIV.F32 S6, S1, S0
+    /////////////////////////////////////////
+
+    VADD.F32 S7, S1, S6
+
+
+    @1 - E^-2X
+    /////////////////////////////////////////
+    //VMUL.F32 S0, S5, S4
+    //VNEG.F32 S0, S0
+    //VMOV.F32 S0, S5
+    VMUL.F32 S0, S5, S4
+    BL _exp
+    VDIV.F32 S8, S1, S0
+    VSUB.F32 S8, S1, S8
+    //VMUL.F32 S8, S8, S4
+    /////////////////////////////////////////
+
+
+    VDIV.F32 S0, S7, S8
+
+    //VMOV.F32 S0, S7
+
+
+    //VNEG.F32 S0, S0
+
+    VPOP.F32 {S1-S8}
     POP {LR}
 BX LR
