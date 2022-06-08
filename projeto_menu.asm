@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - power\n5 - exp\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -49,7 +49,13 @@ FABS VARIABLES
 .align 4
     fabs_print: .asciz "Insert (x) value for fabs(x): "
 
-
+/*
+EXP VARIABLES
+ */
+.align 4
+    numeroExp: .fill 3, 4, 0
+.align 4
+    exp_print: .asciz "Insert (x) value for exp(x): "
 @External C functions
 
 .global scanf
@@ -90,10 +96,8 @@ main:
     CMP R0, #3
     BLEQ _callFatorial
 
-    CMP R0, #4
-    BLEQ _callPowInt
 
-    CMP R0, #5
+    CMP R0, #4
     BLEQ _callExp
 
     
@@ -173,29 +177,24 @@ _callFatorial:
     POP {R0, LR}
 BX LR
 
-_callPowInt:
-    PUSH {R0, LR}
-    LDR R1, =testNumber
-    VLDR S0, [R1]
-    //MOV R0, #2
-    LDR R1, =dois
-    VLDR S1, [R1]
-    
-
-    BL _powInt2
-
-    VCVT.F64.F32 D0, S0
-    VMOV R1, R2, D0
-    LDR R0, =resultado
-    BL printf
-    POP {R0, LR}
-BX LR
-
 _callExp:
     PUSH {R0, LR}
-    LDR R1, =testNumber
-    VLDR S0, [R1]
+    /*LDR R1, =testNumber
+    VLDR S0, [R1]*/
     //MOV R0, #2
+
+    @Print message to user
+    LDR R0, =exp_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numeroExp
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numeroExp
+    VLDR S0, [R1]
     
 
     BL _exp
@@ -309,91 +308,6 @@ _fatorial:
         VPOP.F32 {S1-S5}
         POP {LR}
 BX   LR
-
-/*
-    powInt expoentes inteiros
-    Parametros
-    R0 - expoente
-    S0 - base
-    Retrun
-    S0 - resultado
- */
- 
-_powInt:
-    PUSH {LR}
-    LDR  R2, =one
-    VLDR S1, [R2]
-
-    MOV R1, #0
-    CMP R0, #0
-    /*VMRS APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S1
-    POP {R0, R1, LR}
-    BXEQ LR
-    PUSH {R0, R1, LR}*/
-    CMP R0, #2
-    SUBGe R0, #1
-    /*CMP R0, #0
-    VMRS     APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S1
-    POP {LR}
-    BXEQ LR*/
-    PUSH {LR}
-    VMOV.F32 S3, S0
-    powInt_loop:
-        VMUL.F32 S3, S3, S0
-        ADD R1, #1                
-        CMP R1, R0 
-    BNE powInt_loop
-    VMOV.F32 S0, S3
-    POP {LR}
-BX LR
-
-
-/*
-    powInt expoentes inteiros
-    Parametros
-    S1 - expoente
-    S0 - base
-    Retrun
-    S0 - resultado
- */
-_powInt2:
-    PUSH {LR}
-    LDR  R2, =one
-    VLDR S2, [R2]
-    LDR R2, =zero
-    VLDR S4, [R2]
-    //MOV R1, #0
-    /*CMP R0, #0
-    CMP R0, #2
-    SUBGE R0, #1*/
-    @VERIFY IF ITS 1
-    VCMP.F32 S1, S2
-    VMRS APSR_nzcv, FPSCR
-    POP {LR}
-    BXEQ LR
-    @VERIFY IF IS 0
-    PUSH {LR}
-    VCMP.F32 S1, S4
-    VMRS APSR_nzcv, FPSCR
-    VMOVEQ.F32 S0, S2
-    POP {LR}
-    BXEQ LR
-    PUSH {LR}
-    VSUB.F32 S1, S2
-    VMOV.F32 S3, S0
-    powInt2_loop:
-        VMUL.F32 S3, S3, S0
-        //ADD R1, #1                
-        VADD.F32 S4, S2
-        //CMP R1, R0 
-        VCMP.F32 S4, S1
-        VMRS APSR_nzcv, FPSCR
-    BNE powInt2_loop
-    VMOV.F32 S0, S3
-    POP {LR}
-BX LR
 
 
 
