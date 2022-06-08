@@ -16,13 +16,15 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - power\n5 - exp\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
     one: .single 1.0
 .align 4
     dois: .single 2.0
+.align 4
+  two:      .single 2.0
 /*
 SQRT VARIABLES
  */
@@ -279,13 +281,13 @@ _fatorial:
     LDR  R0, =one
     VLDR S2, [R0]                  @ S2 é uma constante de 1.
 
-        VCMP.F32 S0, S1
-        VMRS APSR_nzcv, FPSCR
-        VMOVEQ.F32 S0, S2
-        @Comparar com 1
-        VCMP.F32 S0, S2
-        VMRS APSR_nzcv, FPSCR
-        VMOVEQ.F32 S0, S2
+    VCMP.F32 S0, S1
+    VMRS APSR_nzcv, FPSCR
+    VMOVEQ.F32 S0, S2
+    @Comparar com 1
+    VCMP.F32 S0, S2
+    VMRS APSR_nzcv, FPSCR
+    VMOVEQ.F32 S0, S2
 
     factorial_loop:
         VMOV.F32 S3, S1              @ S3 = i
@@ -404,48 +406,70 @@ _exp:
     LDR R1, =one
     VLDR S1, [R1]
 
+    LDR R1, =zero
+    VLDR S11, [R1]
+
+    LDR R1, =two
+    VLDR S12, [R1]
+
     LDR R1, =limit
     VLDR S8, [R1]
 
     @S0 - x
-    VADD.F32 S3, S0, S1 @S3 - 1 + x
+    @VADD.F32 S3, S0, S1 @S3 - 1 + x
     @S4 - X
     
     VMOV.F32 S4, S0
-    //MOV R4, #1 @Iterador
-    VMOV.F32 S9, S0
-
-    
-    /*LDR R1, =dois
-    VLDR S1, [R1]
-    //CMP R0, #1
-    @Params - S0, S1
-    BL _powInt2*/
-    @S1 - 1
-    
+  
+    LDR R1, =zero
+    VLDR S9, [R1]
     
     exp_loop:
-        //MOV R0, R4
-        //CMP R0, #1
-        VMOV.F32 S1, S9
+        VCMP.F32   S9, S11
+        VMRS       APSR_nzcv, FPSCR
+        VADDEQ.F32 S3, S1
+        VADDEQ.F32 S9, S1
+        BEQ        exp_loop
+
+        VCMP.F32   S9, S1
+        VMRS       APSR_nzcv, FPSCR
+        VADDEQ.F32 S3, S4
+        VADDEQ.F32 S9, S1
+        BEQ        exp_loop
+
         @Params - R0, S0
-        BLNE _powInt2
+        @BL _powInt2
+        VMOV.F32 S10, S11
+        VMOV.F32 S5, S1
+        exp_pow_loop:
+            VMUL.F32 S5, S4
+
+            VSUB.F32 S13, S9, S1
+            
+            VCMP.F32 S10, S13
+            VMRS     APSR_nzcv, FPSCR
+            VADD.F32 S10, S1
+            BLT      exp_pow_loop
+
         LDR R1, =one
         VLDR S1, [R1]
-        @Return S0
-        VMOV.F32 S5, S0 @pow
-        VMOV.F32 S0, S4
+
+        VMOV.F32 S0, S9  @ S0 = i, i!
         BL _fatorial
+
         VMOV.F32 S6, S0@FATORIAL
         VDIV.F32 S7, S5, S6
-        VADD.F32 S3, S7
-        //ADD R4, #1
+
+        VADD.F32 S3, S7 @ out
+    
         VADD.F32 S9, S1
         VCMP.F32 S7, S8
         VMRS APSR_nzcv, FPSCR
-    BGT exp_loop
-    VMOV.F32 S0, S6
 
+
+    BGE exp_loop
+
+    VMOV.F32 S0, S3
 
     POP {LR}
 BX LR
