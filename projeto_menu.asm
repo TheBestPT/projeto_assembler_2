@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5- sinh\n6 - cosh\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -24,13 +24,15 @@
 .align 4
     dois: .single 2.0
 .align 4
-  two:      .single 2.0
+    two: .single 2.0
 /*
 SQRT VARIABLES
  */
 .align 4
     val1: .single 1.0 @y0
+.align 4
     val2: .single 0.5 @1/2
+.align 4
     limit: .single 1e-5
 .balign 4 
     sqrt_print: .asciz "Insert (x) value for sqrt(x): "
@@ -56,6 +58,20 @@ EXP VARIABLES
     numeroExp: .fill 3, 4, 0
 .align 4
     exp_print: .asciz "Insert (x) value for exp(x): "
+
+/*
+SINH VARIABLES
+ */
+
+.align 4
+    sinh_print: .asciz "Insert (x) value for sinh(x): "
+
+/*
+COSH VARIABLES
+ */
+
+.align 4
+    cosh_print: .asciz "Insert (x) value for cosh(x): "
 @External C functions
 
 .global scanf
@@ -100,9 +116,11 @@ main:
     CMP R0, #4
     BLEQ _callExp
 
-    
+    CMP R0, #5
+    BLEQ _callSinh
 
-
+    CMP R0, #6
+    BLEQ _callCosh
 
     POP {LR}
     BX LR
@@ -179,9 +197,6 @@ BX LR
 
 _callExp:
     PUSH {R0, LR}
-    /*LDR R1, =testNumber
-    VLDR S0, [R1]*/
-    //MOV R0, #2
 
     @Print message to user
     LDR R0, =exp_print
@@ -207,6 +222,55 @@ _callExp:
 BX LR
 
 
+_callSinh:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =sinh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _sinh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callCosh:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =cosh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _cosh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
 
 //---------------------------------------------------------------------------------------------
 
@@ -317,6 +381,7 @@ BX   LR
 
 _exp:
     PUSH {LR}
+    VPUSH.F32 {S1-S13}
     LDR R1, =one
     VLDR S1, [R1]
 
@@ -384,7 +449,103 @@ _exp:
     BGE exp_loop
 
     VMOV.F32 S0, S3
-
+    VPOP.F32 {S1-S13}
     POP {LR}
 BX LR
 
+
+
+/*
+    (1 - E^-2X ) / 2E^-X
+ */
+_sinh:
+    PUSH {LR}
+    VPUSH.F32 {S1-S3}
+    LDR R1, =one
+    VLDR S1, [R1]
+
+    LDR R1, =zero
+    VLDR S2, [R1]
+
+    VMOV.F32 S5, S0@x
+
+    @E^-2X
+    /////////////////////////////////////////
+    LDR R1, =two
+    VLDR S4, [R1]
+    VMUL.F32 S0, S5, S4
+    //VNEG.F32 S0, S0
+    BL _exp
+    VDIV.F32 S6, S1, S0
+    /////////////////////////////////////////
+
+    VSUB.F32 S7, S1, S6
+
+
+    @2E^-X
+    /////////////////////////////////////////
+    //VMUL.F32 S0, S5, S4
+    //VNEG.F32 S0, S0
+    VMOV.F32 S0, S5
+    BL _exp
+    VDIV.F32 S8, S1, S0
+    VMUL.F32 S8, S8, S4
+    /////////////////////////////////////////
+
+
+    VDIV.F32 S0, S7, S8
+
+    //VMOV.F32 S0, S7
+
+
+    //VNEG.F32 S0, S0
+
+    VPOP.F32 {S1-S3}
+    POP {LR}
+BX LR
+
+_cosh:
+    PUSH {LR}
+    VPUSH.F32 {S1-S3}
+    LDR R1, =one
+    VLDR S1, [R1]
+
+    LDR R1, =zero
+    VLDR S2, [R1]
+
+    VMOV.F32 S5, S0@x
+
+    @E^-2X
+    /////////////////////////////////////////
+    LDR R1, =two
+    VLDR S4, [R1]
+    VMUL.F32 S0, S5, S4
+    //VNEG.F32 S0, S0
+    BL _exp
+    VDIV.F32 S6, S1, S0
+    /////////////////////////////////////////
+
+    VADD.F32 S7, S1, S6
+
+
+    @2E^-X
+    /////////////////////////////////////////
+    //VMUL.F32 S0, S5, S4
+    //VNEG.F32 S0, S0
+    VMOV.F32 S0, S5
+    BL _exp
+    VDIV.F32 S8, S1, S0
+    VMUL.F32 S8, S8, S4
+    /////////////////////////////////////////
+
+
+    VDIV.F32 S0, S7, S8
+
+    //VMOV.F32 S0, S7
+
+
+    //VNEG.F32 S0, S0
+
+    VPOP.F32 {S1-S3}
+    POP {LR}
+BX LR
