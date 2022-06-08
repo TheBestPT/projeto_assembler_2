@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5- sinh\n6 - cosh\n7 - tanh\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -81,8 +81,19 @@ TANH VARIABLES
     tanh_print: .asciz "Insert (x) value for cosh(x): "
 
 
-@External C functions
+/*
+HYPOT VARIABLES
+ */
+.align 4
+    hypotc1_print: .asciz "Insert (c1) value for hypot: "
+.align 4
+    hypotc2_print: .asciz "Insert (c2) value for hypot: "
+.align 4
+    c1_nr: .single 0.0
+.align 4
+    c2_nr: .single 0.0
 
+@External C functions
 .global scanf
 .global printf
 
@@ -133,6 +144,9 @@ main:
 
     CMP R0, #7
     BLEQ _callTanh
+
+    CMP R0, #8
+    BLEQ _callHypot
 
     POP {LR}
     BX LR
@@ -301,6 +315,51 @@ _callTanh:
     VLDR S0, [R1]
 
     BL _tanh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callHypot:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    /*LDR R0, =tanh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]*/
+
+    LDR R0, =hypotc1_print
+    BL printf
+
+    LDR R1, =c1_nr
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R0, =hypotc2_print
+    BL printf
+
+    LDR R1, =c2_nr
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R1, =c1_nr
+    VLDR S0, [R1]
+
+    LDR R1, =c2_nr
+    VLDR S1, [R1]
+
+    BL _hypot
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -596,7 +655,7 @@ BX LR
     (1 - E^-2X ) / (1 + E^-2X )
  */
 _tanh:
-PUSH {LR}
+    PUSH {LR}
     VPUSH.F32 {S1-S8}
     LDR R1, =one
     VLDR S1, [R1]
@@ -642,3 +701,41 @@ PUSH {LR}
     VPOP.F32 {S1-S8}
     POP {LR}
 BX LR
+
+/*
+    H^2 = C1^2 + C2^2
+ */
+_hypot:
+    PUSH {LR}
+    VPUSH.F32 {S1-S7}
+    LDR R1, =one
+    VLDR S2, [R1]
+
+    LDR R1, =zero
+    VLDR S3, [R1]
+
+    LDR R1, =two
+    VLDR S7, [R1]
+
+    VMUL.F32 S4, S0, S0
+    VMUL.F32 S5, S1, S1
+
+    VADD.F32 S6, S5, S4
+
+    VMOV.F32 S0, S6
+
+    BL _sqrt
+
+    //VMOV.F32 S0, S4
+    VPOP.F32 {S1-S7}
+    POP {LR}
+BX LR
+
+
+
+
+
+
+
+
+
