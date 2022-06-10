@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n12 - pow\n13 - log10\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n12 - pow\n13 - log10\n14 - logx\n15 - asinh\n16 - acosh\n17 - atanh\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -27,6 +27,8 @@
     two: .single 2.0
 .balign 4
     ten: .single 10.0
+.balign 4
+    half: .single 0.5
 /*
 SQRT VARIABLES
  */
@@ -133,9 +135,39 @@ POW VARIABLES
 LOG10 VARIABLES
  */
 .align 4
-    log10_print: .asciz "Insert (x) value for cosh(x): "
+    log10_print: .asciz "Insert (x) value for log10(x): "
 .align 4
     numberLog10: .fill 3, 4, 0
+
+/*
+LOG10 VARIABLES
+ */
+.align 4
+    logx_print: .asciz "Insert (x) value for logx(x): "
+.align 4
+    logx_base_print: .asciz "Insert (x) value for x: "
+.align 4
+    numberLogX: .fill 3, 4, 0
+.align 4
+    numberLogXBase: .fill 3, 4, 0
+
+/*
+ASINH VARIABLES
+ */
+.align 4
+    asinh_print: .asciz "Insert (x) value for asinh(x): "
+
+/*
+ACOSH VARIABLES
+ */
+.align 4
+    acosh_print: .asciz "Insert (x) value for acosh(x): "
+
+/*
+ATANH VARIABLES
+ */
+.align 4
+    atanh_print: .asciz "Insert (x) value for acosh(x): "
 
 @External C functions
 .global scanf
@@ -206,6 +238,18 @@ main:
 
     CMP R0, #13
     BLEQ _callLog10
+
+    CMP R0, #14
+    BLEQ _callLogX
+
+    CMP R0, #15
+    BLEQ _callAsinh
+
+    CMP R0, #16
+    BLEQ _callAcosh
+
+    CMP R0, #17
+    BLEQ _callAtanh
 
     POP {LR}
     BX LR
@@ -554,6 +598,116 @@ _callLog10:
     POP {R0, LR}
 BX LR
 
+
+_callLogX:
+    PUSH {R0, LR}
+    LDR R0, =logx_print
+    BL printf
+
+    LDR R1, =numberLogX
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R0, =logx_base_print
+    BL printf
+
+    LDR R1, =numberLogXBase
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R1, =numberLogX
+    VLDR S0, [R1]
+
+    LDR R1, =numberLogXBase
+    VLDR S1, [R1]
+
+    BL _logx
+
+    @BL _exp
+
+    
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callAsinh:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =asinh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _asinh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callAcosh:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =acosh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _acosh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callAtanh:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =atanh_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _atanh
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
 //---------------------------------------------------------------------------------------------
 
 //METHODS
@@ -1014,6 +1168,7 @@ BX LR
  
 _ldexp:
     PUSH {LR}
+    VPUSH.F32 {S1-S6}
     LDR R1, =dois
     VLDR S2, [R1]
     
@@ -1035,6 +1190,7 @@ _ldexp:
 
     VMUL.F32 S0, S5, S0
 
+    VPOP.F32 {S1-S6}
     POP {LR}
 BX LR
 
@@ -1198,3 +1354,103 @@ _log10:
     VPOP.F32 {S1-S6}
     POP {LR}
 BX LR
+
+
+_logx:
+    PUSH {LR}
+    VPUSH.F32 {S1-S5}
+    @Perserve S0
+    VMOV.F32 S4, S0
+
+    BL _ln
+
+    VMOV.F32 S5, S0
+
+    VMOV.F32 S0, S1
+
+    BL _ln
+    
+    VDIV.F32 S0, S5, S0
+
+
+    VPOP.F32 {S1-S5}
+    POP {LR}
+BX LR
+
+/* ln (x + sqrt( x^2 - 1 )) */
+_asinh:
+    PUSH {LR}
+    VPUSH.F32 {S1-S5}
+    LDR R1, =one
+    VLDR S4, [R1]
+
+    LDR R1, =dois
+    VLDR S5, [R1]
+
+    @Perserve S0
+    VMOV.F32 S2, S0
+    @S1 expoente
+    VMUL.F32 S0, S0, S0
+    
+
+    VADD.F32 S0, S4
+
+    BL _sqrt
+
+    VADD.F32 S0, S2
+
+    BL _ln
+    VPOP.F32 {S1-S5}
+    POP {LR}
+BX LR
+
+
+/* ln (x + sqrt( x^2 - 1 )) */
+_acosh:
+    PUSH {LR}
+    VPUSH.F32 {S1-S5}
+    LDR R1, =one
+    VLDR S4, [R1]
+
+    LDR R1, =dois
+    VLDR S5, [R1]
+
+    @Perserve S0
+    VMOV.F32 S2, S0
+    @S1 expoente
+    VMUL.F32 S0, S0, S0
+    
+
+    VSUB.F32 S0, S4
+
+    BL _sqrt
+
+    VADD.F32 S0, S2
+
+    BL _ln
+    VPOP.F32 {S1-S5}
+    POP {LR}
+BX LR
+
+/* 1/2 * ln (1+x/1-x) */
+_atanh:
+    PUSH {LR}
+    LDR R1, =half
+    VLDR S3, [R1]
+
+    LDR R1, =one
+    VLDR S4, [R1]
+
+    VMOV.F32 S5, S0 
+
+    VADD.F32 S6, S4, S5
+    VSUB.F32 S7, S4, S5
+
+    VDIV.F32 S0, S6, S7
+    BL _ln
+
+    VMUL.F32 S0, S0, S3
+
+    POP {LR}    
+BX LR
+
