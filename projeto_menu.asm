@@ -1,3 +1,11 @@
+/**
+ * INSTITUTO POLITÉCNICO DE BEJA
+ * ESCOLA SUPERIOR DE TÉCNOLOGIA E GESTÃO
+ * ENGENHARIA INFORMÁTICA
+ * JOSÉ FRANCISCO - 22896
+ * PATRÍCIA BERENGUER - 22893
+ */
+
 @Data Section
 .data
 /*
@@ -854,7 +862,12 @@ _fatorial:
 BX LR
 
 
-
+/* EXP - calcula o exponencial do numero dado
+    Parametros:
+    S0 - numero (expoente para o e)
+    Retrun:
+    S0 - exponencial 
+ */
 _exp:
     PUSH {LR}
     VPUSH.F32 {S1-S13}
@@ -869,10 +882,6 @@ _exp:
 
     LDR R1, =limit
     VLDR S8, [R1]
-
-    @S0 - x
-    @VADD.F32 S3, S0, S1 @S3 - 1 + x
-    @S4 - X
     
     VMOV.F32 S4, S0
   
@@ -880,20 +889,19 @@ _exp:
     VLDR S9, [R1]
     
     exp_loop:
-        VCMP.F32   S9, S11
-        VMRS       APSR_nzcv, FPSCR
+        VCMP.F32 S9, S11
+        VMRS APSR_nzcv, FPSCR
         VADDEQ.F32 S3, S1
         VADDEQ.F32 S9, S1
-        BEQ        exp_loop
+        BEQ exp_loop
 
-        VCMP.F32   S9, S1
-        VMRS       APSR_nzcv, FPSCR
+        VCMP.F32 S9, S1
+        VMRS APSR_nzcv, FPSCR
         VADDEQ.F32 S3, S4
         VADDEQ.F32 S9, S1
-        BEQ        exp_loop
+        BEQ exp_loop
 
-        @Params - R0, S0
-        @BL _powInt2
+        
         VMOV.F32 S10, S11
         VMOV.F32 S5, S1
         exp_pow_loop:
@@ -902,9 +910,9 @@ _exp:
             VSUB.F32 S13, S9, S1
             
             VCMP.F32 S10, S13
-            VMRS     APSR_nzcv, FPSCR
+            VMRS APSR_nzcv, FPSCR
             VADD.F32 S10, S1
-            BLT      exp_pow_loop
+        BLT exp_pow_loop
 
         LDR R1, =one
         VLDR S1, [R1]
@@ -931,7 +939,13 @@ BX LR
 
 
 
-/*
+/* SINH - calcula o sinh a partir de um dado número
+    Parametros:
+    S0 - numero
+    Return:
+    S0 - sinh
+ */
+/* Formula usada para calcular
     (1 - E^-2X ) / 2E^-X
  */
 _sinh:
@@ -980,8 +994,13 @@ _sinh:
     POP {LR}
 BX LR
 
-
-/*
+/* COSH - calcula o cosh a partir de um dado número
+    Parametros:
+    S0 - numero
+    Return:
+    S0 - cosh
+ */
+/*  Formula usada para calcular
     (1 - E^-2X ) / 2E^-X
  */
 _cosh:
@@ -1030,8 +1049,13 @@ _cosh:
     POP {LR}
 BX LR
 
-
-/*
+/* TANH - calcula o tanh a partir de um dado número
+    Parametros:
+    S0 - numero
+    Return:
+    S0 - tanh
+ */
+/*  Formula usada para calcular
     (1 - E^-2X ) / (1 + E^-2X )
  */
 _tanh:
@@ -1082,6 +1106,14 @@ _tanh:
     POP {LR}
 BX LR
 
+/* HYPOT - calcular a hipotenusa de um triângulo fornecendos os seus catetos
+    Parametros:
+    S0 - cateto 1
+    S1 - cateto 2
+    Retrun
+    S0 - hipotenusa
+
+ */
 /*
     H^2 = C1^2 + C2^2
  */
@@ -1112,46 +1144,13 @@ _hypot:
 BX LR
 
 
-
-
-
-
-
-
-
-_powInt:
-    PUSH {LR}
-    VPUSH.F32 {S1-S3}
-    LDR  R2, =one
-    VLDR S1, [R2]
-
-    MOV R1, #0
-    CMP R0, #0
-    BEQ end_powint_zero
-    CMP R0, #1
-    BEQ end_powint
-
-    SUB R0, #1
-    VMOV.F32 S3, S0
-    powInt_loop:
-        VMUL.F32 S3, S3, S0
-        ADD R1, #1                
-        CMP R1, R0 
-    BNE powInt_loop
-    VMOV.F32 S0, S3
-    end_powint_zero:
-        CMP R0, #0
-        BNE end_powint
-        VMOV.F32 S0, S1
-        VPOP.F32 {S1-S3}
-        POP {LR}
-        BX LR
-    end_powint:
-        VPOP.F32 {S1-S3}
-        POP {LR}
-    BX LR
-
-
+/* POWINT - função auxiliar para calculer potencias de forma mais precisa (Só funciona com expoentes inteiros)
+    Parametros:
+    S0 - base do expoente
+    S1 - expoente
+    Retrun:
+    S0 - pow
+ */
 _powInt2:
     PUSH {LR}
     VPUSH.F32 {S1-S4}
@@ -1188,7 +1187,7 @@ _powInt2:
         VCMP.F32 S1, S4
         VMRS APSR_nzcv, FPSCR
         BNE end_powint2
-        VMOV.F32 S0, S1
+        VMOVEQ.F32 S0, S1
         VPOP.F32 {S1-S4}
         POP {LR}
         BX LR
@@ -1199,11 +1198,13 @@ _powInt2:
 BX LR
 
 
-/*
-    S0 - mul number
-    S1 - exponent
+/*  LDEXP - Usado para returnar um numero multiplicado por 2 com espoente dado
+    Parametors:
+    S0 - numero a ser multiplicado
+    S1 - expoente 
+    Return:
+    S0 - lexp
  */
- 
 _ldexp:
     PUSH {LR}
     VPUSH.F32 {S1-S6}
@@ -1233,7 +1234,16 @@ _ldexp:
 BX LR
 
 
-/*
+
+
+/* LN - usado para calcular a inversa da expoencial
+    Parametros:
+    S0 - numero
+    Return:
+    S0 - ln
+
+ */
+/* Algoritmo encontrado para calcular o ln
     function calculateLnx(n){
         let num, mul, cal, sum = 0;
         num = (n - 1) / (n + 1);
@@ -1251,9 +1261,6 @@ BX LR
         return sum;
     }
  */
- /*
- S0 - n
-  */
 _ln:
     PUSH {LR}
     VPUSH.F32 {S1-S13}
@@ -1332,44 +1339,44 @@ _ln:
     POP {LR}
 BX LR
 
-/*_pow:
-    PUSH {LR}
-    VPUSH.F32 {S2-S3}
 
-    @Peserve base
-    VMOV.F32 S2, S0
-
-    @ln
-    //VMOV.F32 S0, S1 
-    BL _ln
-
-
-    VMUL.F32 S3, S1, S0
-
-    VMOV.F32 S0, S3
-    BL _exp
-    //VMOV.F32 S0, S3
-    VPOP.F32 {S2-S3}
-    POP {LR}
-BX LR*/
-
-
+/* POW - e o mesmo que o powint mas com a diferença que esta preparado para expoentes decimais
+    Parametros:
+    S0 - base 
+    S1 - expoente
+    Return:
+    S0 - pow
+ */
+/* Algoritmo encontrado para calcular o expoente
+    Math.Exp(expoente * Math.Log(base))
+ */
 _pow:
     PUSH {LR}
-    VPUSH.F32 {S1-S3}
+    VPUSH.F32 {S1-S4}
     BL   _ln
-    VPOP.F32 {S1-S3}
+    VPOP.F32 {S1-S4}
   
 
-    VMUL.F32 S2, S0, S1
-    VMOV.F32 S0, S2
+    VMUL.F32 S4, S0, S1
+    VMOV.F32 S0, S4
 
-    VPUSH.F32 {S1-S3}
+    VPUSH.F32 {S1-S4}
     BL   _exp
-    VPOP.F32 {S1-S3}
+    VPOP.F32 {S1-S4}
     POP  {LR}
 BX LR
 
+
+
+/* LOG10 - usado para calcular o log de base 10
+    Parametros:
+    S0 - numero
+    Return:
+    S0 - log10
+ */
+/*  Algoritmo encontrado para calcular log10
+    ln(x)/ln(10) = log10(x)
+ */
 _log10:
     PUSH {LR}
     VPUSH.F32 {S1-S6}
@@ -1393,7 +1400,16 @@ _log10:
     POP {LR}
 BX LR
 
-
+/* LOG10 - o mesmo que log 10 mas para qualquer base
+    Parametros:
+    S0 - numero
+    S1 - base
+    Return:
+    S0 - logx
+ */
+/*  Algoritmo encontrado para calcular log10
+    ln(x)/ln(b) = log10(x)
+ */
 _logx:
     PUSH {LR}
     VPUSH.F32 {S1-S5}
@@ -1415,7 +1431,17 @@ _logx:
     POP {LR}
 BX LR
 
-/* ln (x + sqrt( x^2 - 1 )) */
+
+
+/* ASINH - usado para calcular a inversa de asin
+    Parametros
+    S0 - numero
+    Return
+    S0 - asinh
+ */
+/* Formula usada para calcular 
+    ln (x + sqrt( x^2 - 1 )) 
+*/
 _asinh:
     PUSH {LR}
     VPUSH.F32 {S1-S5}
@@ -1442,8 +1468,15 @@ _asinh:
     POP {LR}
 BX LR
 
-
-/* ln (x + sqrt( x^2 - 1 )) */
+/* ACOSH - usado para calcular a inversa de acosh
+    Parametros
+    S0 - numero
+    Return
+    S0 - acosh
+ */
+/*  Formula usada para calcular 
+    ln (x + sqrt( x^2 - 1 )) 
+*/
 _acosh:
     PUSH {LR}
     VPUSH.F32 {S1-S5}
@@ -1470,7 +1503,15 @@ _acosh:
     POP {LR}
 BX LR
 
-/* 1/2 * ln (1+x/1-x) */
+/* ATANH - usado para calcular a inversa de atanh
+    Parametros
+    S0 - numero
+    Return
+    S0 - atanh
+ */
+/*  Formula usada para calcular
+    1/2 * ln (1+x/1-x) 
+*/
 _atanh:
     PUSH {LR}
     LDR R1, =half
