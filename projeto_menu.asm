@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -93,6 +93,15 @@ HYPOT VARIABLES
 .align 4
     c2_nr: .single 0.0
 
+/*
+LN VARIABLES
+ */
+
+.align 4
+    ln_print: .asciz "Insert (x) value for ln(x): "
+.align 4
+    lnlimit: .single 1000.0
+
 @External C functions
 .global scanf
 .global printf
@@ -150,6 +159,12 @@ main:
 
     CMP R0, #9
     BLEQ _callPowInt
+
+    CMP R0, #10
+    BLEQ _callLdexp
+
+    CMP R0, #11
+    BLEQ _callLn
 
     POP {LR}
     BX LR
@@ -328,19 +343,6 @@ BX LR
 
 _callHypot:
     PUSH {R0, LR}
-    
-    @Print message to user
-    /*LDR R0, =tanh_print
-    BL printf
-
-    @Read values of x
-    LDR R1, =numero
-    LDR R0, =scanfp
-    BL scanf
-
-    @Load float to 50
-    LDR R1, =numero
-    VLDR S0, [R1]*/
 
     LDR R0, =hypotc1_print
     BL printf
@@ -375,10 +377,12 @@ _callPowInt:
     PUSH {R0, LR}
     LDR R1, =testNumber
     VLDR S0, [R1]
-    MOV R0, #3
+    //MOV R0, #3
+    LDR R1, =two
+    VLDR S1, [R1]
     
 
-    BL _powInt
+    BL _powInt2
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -386,6 +390,59 @@ _callPowInt:
     BL printf
     POP {R0, LR}
 BX LR
+
+
+_callLdexp:
+    PUSH {R0, LR}
+
+    @Print message to user
+    LDR R0, =exp_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numeroExp
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numeroExp
+    VLDR S0, [R1]
+    
+
+    //BL _ldexp
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callLn:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =ln_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numero
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numero
+    VLDR S0, [R1]
+
+    BL _ln
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
 
 //---------------------------------------------------------------------------------------------
 
@@ -760,6 +817,7 @@ BX LR
 
 _powInt:
     PUSH {LR}
+    VPUSH.F32 {S1-S3}
     LDR  R2, =one
     VLDR S1, [R2]
 
@@ -781,10 +839,188 @@ _powInt:
         CMP R0, #0
         BNE end_powint
         VMOV.F32 S0, S1
-        
+        VPOP.F32 {S1-S3}
         POP {LR}
         BX LR
     end_powint:
+        VPOP.F32 {S1-S3}
         POP {LR}
     BX LR
 
+
+_powInt2:
+    PUSH {LR}
+    VPUSH.F32 {S1-S4}
+    LDR  R2, =one
+    VLDR S2, [R2]
+    LDR R2, =zero
+    VLDR S4, [R2]
+    //MOV R1, #0
+    /*CMP R0, #0
+    CMP R0, #2
+    SUBGE R0, #1*/
+    @VERIFY IF ITS 1
+    VCMP.F32 S1, S2
+    VMRS APSR_nzcv, FPSCR
+    BEQ end_powint2
+    @VERIFY IF IS 0
+    VCMP.F32 S1, S4
+    VMRS APSR_nzcv, FPSCR
+    //VMOVEQ.F32 S0, S2
+    BEQ end_powint2_zero
+    VSUB.F32 S1, S2
+    VMOV.F32 S3, S0
+    powInt2_loop:
+        VMUL.F32 S3, S3, S0
+        //ADD R1, #1                
+        VADD.F32 S4, S2
+        //CMP R1, R0 
+        VCMP.F32 S4, S1
+        VMRS APSR_nzcv, FPSCR
+    BNE powInt2_loop
+    VMOV.F32 S0, S3
+    end_powint2_zero:
+        VADD.F32 S1, S2
+        VCMP.F32 S1, S4
+        VMRS APSR_nzcv, FPSCR
+        BNE end_powint2
+        VMOV.F32 S0, S1
+        VPOP.F32 {S1-S4}
+        POP {LR}
+        BX LR
+
+    end_powint2:
+    VPOP.F32 {S1-S4}
+    POP {LR}
+BX LR
+
+
+/*
+    S0 - mul number
+    S1 - exponent
+ */
+ /*
+_ldexp:
+    PUSH {LR}
+    LDR R1, =dois
+    VLDR S2, [R1]
+    
+    LDR R1, =one
+    VLDR S3, [R1]
+
+    LDR R1, =zero
+    VLDR S4, [R1]
+
+    @S5 - MUL NUMBER
+    VMOV.F32 S5, S0
+
+    @s0 - exponent base
+    VMOV.F32 SO, S2
+
+    BL _powAllInt
+
+    
+
+
+    POP {LR}
+BX LR*/
+
+
+/*
+    function calculateLnx(n){
+        let num, mul, cal, sum = 0;
+        num = (n - 1) / (n + 1);
+    
+        // Terminating value of the loop
+        // can be increased to improve the precision
+        for(let i = 1; i <= 1000; i++)
+        {
+            mul = (2 * i) - 1;
+            cal = Math.pow(num, mul);
+            cal = cal / mul;
+            sum = sum + cal;
+        }
+        sum = 2 * sum;
+        return sum;
+    }
+ */
+ /*
+ S0 - n
+  */
+_ln:
+    PUSH {LR}
+    VPUSH.F32 {S1-S13}
+
+    @Incrementador
+    LDR R1, =one
+    VLDR S4, [R1]
+
+    @num
+    LDR R1, =zero
+    VLDR S5, [R1]
+
+    @mul
+    LDR R1, =zero
+    VLDR S6, [R1]
+
+    @cal
+    LDR R1, =zero
+    VLDR S7, [R1]
+
+    @sum
+    LDR R1, =zero
+    VLDR S8, [R1]
+
+    @limit
+    LDR R1, =lnlimit
+    VLDR S9, [R1]
+
+
+    @two
+    LDR R1, =two
+    VLDR S10, [R1]
+
+    @one
+    LDR R1, =one
+    VLDR S11, [R1]
+
+    VSUB.F32 S12, S0, S11
+    VADD.F32 S13, S0, S11
+    VDIV.F32 S5, S12, S13
+
+    ln_loop:
+        @first step mul = (2 * i)
+        VMUL.F32 S6, S4, S10
+        @ mul = (2 * i) - 1
+        VSUB.F32 S6, S11
+        @end first setp
+
+        @Second step Math.pow(num, mul)
+        @PERSERVE N
+        VMOV.F32 S2, S0
+
+        VMOV.F32 S0, S5
+        VMOV.F32 S1, S6
+
+        BL _powInt2
+        @End first
+
+        @Third step cal = cal / mul
+        VMOV.F32 S7, S0
+        VDIV.F32 S7, S7, S6
+        @End third
+
+        @Fourth step sum = sum + cal
+        VADD.F32 S8, S7
+        @end fourth step
+
+        VADD.F32 S4, S11
+        VCMP.F32 S4, S9
+        VMRS APSR_nzcv, FPSCR
+    BLE ln_loop
+    VMUL.F32 S8, S10
+    VMOV.F32 S0, S8
+    //VMOV.F32 S0, S6
+    VPOP.F32 {S1-S13}
+    POP {LR}
+BX LR
