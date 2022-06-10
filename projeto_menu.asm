@@ -62,6 +62,17 @@ EXP VARIABLES
     exp_print: .asciz "Insert (x) value for exp(x): "
 
 /*
+LEXP
+ */
+.align 4
+    ldexp_mul_print: .asciz "Insert (x) value for lexp multiplyer number(x): "
+.align 4
+    ldexp_expon_print: .asciz "Insert (x) value for lexp exponent(x): "
+.align 4
+    numeroMulLdexp: .fill 3, 4, 0
+.align 4
+    exponentLdexp: .fill 3, 4, 0
+/*
 SINH VARIABLES
  */
 
@@ -414,20 +425,30 @@ _callLdexp:
     PUSH {R0, LR}
 
     @Print message to user
-    LDR R0, =exp_print
+    LDR R0, =ldexp_mul_print
     BL printf
 
     @Read values of x
-    LDR R1, =numeroExp
+    LDR R1, =numeroMulLdexp
     LDR R0, =scanfp
     BL scanf
 
-    @Load float to 50
-    LDR R1, =numeroExp
+    LDR R0, =ldexp_expon_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =exponentLdexp
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R1, =numeroMulLdexp
     VLDR S0, [R1]
+
+    LDR R1, =exponentLdexp
+    VLDR S1, [R1]
     
 
-    //BL _ldexp
+    BL _ldexp
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -967,14 +988,15 @@ _ldexp:
 
     @S5 - MUL NUMBER
     VMOV.F32 S5, S0
+    @S6 - EXPONENT
+    VMOV.F32 S6, S1
 
     @s0 - exponent base
-    //VMOV.F32 SO, S2
-
+    VMOV.F32 S0, S2
+    VMOV.F32 S1, S6
     BL _powInt2
 
-    
-
+    VMUL.F32 S0, S5, S0
 
     POP {LR}
 BX LR
