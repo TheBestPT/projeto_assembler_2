@@ -58,6 +58,14 @@ FABS VARIABLES
     fabs_print: .asciz "Insert (x) value for fabs(x): "
 
 /*
+FATORIAL VARIABLES
+ */
+.align 4
+    fatorial_print: .asciz "Insert (x) value for fatorial(x): "
+.align 4
+    numeroFatorial: .fill 3, 4, 0
+
+/*
 EXP VARIABLES
  */
 .align 4
@@ -181,7 +189,9 @@ ATANH VARIABLES
 
 
 main:
-
+    /*
+    Esta secacao do main e para seleção das opcões do menu
+     */
     PUSH {LR}
     LDR R0, =mainMenu
     BL printf
@@ -192,12 +202,7 @@ main:
 
     LDR R0, =inputOption
     LDRB R2, [R0, #0]
-    MOV R0, R2
-
-
-
-
-    //-------------- CALL sqrt 
+    MOV R0, R2 
     
     CMP R0, #1
     BLEQ _callSqrt
@@ -258,6 +263,9 @@ _exit:
     MOV R7, #1
     SVC #0 @Invoke Syscall
 
+/*
+Todos os calls das funções são parecidos e única diferença é que muda a string o metodo chamado e quantidade de variaveis a inserir
+ */
 _callSqrt:
     PUSH {R0, LR}
 
@@ -310,9 +318,18 @@ BX LR
 
 _callFatorial:
     PUSH {R0, LR}
-    LDR R1, =testNumber
-    VLDR S0, [R1]
+    @Print message to user
+    LDR R0, =fatorial_print
+    BL printf
 
+    @Read values of x
+    LDR R1, =numeroFatorial
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numeroFatorial
+    VLDR S0, [R1]
     
 
     BL _fatorial
@@ -460,10 +477,25 @@ BX LR
 
 _callPowInt:
     PUSH {R0, LR}
-    LDR R1, =testNumber
+
+    LDR R0, =pow_base_print
+    BL printf
+
+    LDR R1, =pow_base
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R0, =pow_expon_print
+    BL printf
+
+    LDR R1, =numeroExp
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R1, =pow_base
     VLDR S0, [R1]
-    //MOV R0, #3
-    LDR R1, =two
+
+    LDR R1, =numeroExp
     VLDR S1, [R1]
     
 
@@ -562,8 +594,6 @@ _callPow:
 
     BL _pow
 
-    @BL _exp
-
     
 
     VCVT.F64.F32 D0, S0
@@ -622,8 +652,6 @@ _callLogX:
     VLDR S1, [R1]
 
     BL _logx
-
-    @BL _exp
 
     
 
@@ -714,10 +742,11 @@ BX LR
 
 //---------------------------------------------------------------------------------------------
 
-/*  Sqrt
-
+/*  Sqrt - Fazer raiz quadrada
     Parametros:
-    
+    S0 - numero
+    Return 
+    S0 - raiz quadrada
 */
 _sqrt:
     PUSH {LR}
@@ -749,7 +778,12 @@ _sqrt:
     POP {LR}
 BX LR
 
-
+/* FABS - retorna o valor absoluto
+    Parametros:
+    S0 - numero
+    Return
+    S0 - numero em valor absoluto
+ */
 _fabs:
     PUSH {LR}
     VPUSH {S1-S5}
@@ -769,51 +803,55 @@ _fabs:
 BX LR
 
 
-
+/* Fatorial - calcula o fatorial de um numero
+    Parametros:
+    S0 - numero
+    Return:
+    S0 - fatorial
+ */
 _fatorial:
     PUSH {LR}
     VPUSH.F32 {S1-S5}
-
-        
-
     LDR  R0, =zero
-    VLDR S1, [R0]                  @ S1 começa em 0 mas incrementa.
-    VLDR S4, [R0]                  @ S4 é uma constante de 0.
+    VLDR S1, [R0]                  
+    VLDR S4, [R0]                  
     LDR  R0, =one
-    VLDR S2, [R0]                  @ S2 é uma constante de 1.
+    VLDR S2, [R0]                  
 
     VCMP.F32 S0, S1
     VMRS APSR_nzcv, FPSCR
     VMOVEQ.F32 S0, S2
-    @Comparar com 1
+    @Compare with 1
     VCMP.F32 S0, S2
     VMRS APSR_nzcv, FPSCR
     VMOVEQ.F32 S0, S2
 
     factorial_loop:
-        VMOV.F32 S3, S1              @ S3 = i
-        VMOV.F32 S5, S3              @ Criar cópia de S3 para S5. S5 é out.
-        VSUB.F32 S3, S2              @ S3 -= 1.0
+        @S3 = I
+        VMOV.F32 S3, S1          
+        @ Create copy from S3 to S5. S5 - out.
+        VMOV.F32 S5, S3              
+        @ S3 -= 1.0
+        VSUB.F32 S3, S2              
         factorial_loop_2:
-            VMUL.F32 S5, S3            @ S5 *= S3
-            VSUB.F32 S3, S2            @ S3 -= 1.0 (decrementa, i--)
-            VCMP.F32 S3, S4            @ S3 > 0
-            VMRS     APSR_nzcv, FPSCR
-        BGT      factorial_loop_2
-        VCMP.F32 S1, S0              @ i < range 
-        VADD.F32 S1, S2              @ S1 += 1.0
-        VMRS     APSR_nzcv, FPSCR
-    BLT      factorial_loop
+            @ S5 *= S3
+            VMUL.F32 S5, S3            
+            @ S3 -= 1.0  / i--
+            VSUB.F32 S3, S2            
+            @ S3 > 0
+            VCMP.F32 S3, S4            
+            VMRS APSR_nzcv, FPSCR
+        BGT factorial_loop_2
+        VCMP.F32 S1, S0              
+        VADD.F32 S1, S2              
+        VMRS APSR_nzcv, FPSCR
+    BLT factorial_loop
         VCMP.F32 S0, S2
         VMRS APSR_nzcv, FPSCR
         VMOVNE.F32 S0, S5
         VPOP.F32 {S1-S5}
         POP {LR}
-BX   LR
-
-
-
-
+BX LR
 
 
 
