@@ -221,7 +221,6 @@ main:
     CMP R0, #3
     BLEQ _callFatorial
 
-
     CMP R0, #4
     BLEQ _callExp
 
@@ -265,11 +264,9 @@ main:
     BLEQ _callAtanh
 
     POP {LR}
-    BX LR
+BX LR
 
-_exit: 
-    MOV R7, #1
-    SVC #0 @Invoke Syscall
+
 
 /*
 Todos os calls das funções são parecidos e única diferença é que muda a string o metodo chamado e quantidade de variaveis a inserir
@@ -867,6 +864,9 @@ BX LR
     S0 - numero (expoente para o e)
     Retrun:
     S0 - exponencial 
+ */
+/* Fórmula usada para caculas
+    Somatorio( x^2 / 2! + x^3 / 3! ....... )
  */
 _exp:
     PUSH {LR}
