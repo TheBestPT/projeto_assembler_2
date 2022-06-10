@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n12 - pow\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n12 - pow\n13 - log10\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -25,6 +25,8 @@
     dois: .single 2.0
 .align 4
     two: .single 2.0
+.balign 4
+    ten: .single 10.0
 /*
 SQRT VARIABLES
  */
@@ -127,6 +129,13 @@ POW VARIABLES
 .align 4
     pow_exponent: .fill 3, 4, 0
 
+/*
+LOG10 VARIABLES
+ */
+.align 4
+    log10_print: .asciz "Insert (x) value for cosh(x): "
+.align 4
+    numberLog10: .fill 3, 4, 0
 
 @External C functions
 .global scanf
@@ -194,6 +203,9 @@ main:
 
     CMP R0, #12
     BLEQ _callPow
+
+    CMP R0, #13
+    BLEQ _callLog10
 
     POP {LR}
     BX LR
@@ -509,6 +521,31 @@ _callPow:
     @BL _exp
 
     
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
+
+_callLog10:
+    PUSH {R0, LR}
+    
+    @Print message to user
+    LDR R0, =log10_print
+    BL printf
+
+    @Read values of x
+    LDR R1, =numberLog10
+    LDR R0, =scanfp
+    BL scanf
+
+    @Load float to 50
+    LDR R1, =numberLog10
+    VLDR S0, [R1]
+
+    BL _log10
 
     VCVT.F64.F32 D0, S0
     VMOV R1, R2, D0
@@ -1137,4 +1174,27 @@ _pow:
     BL   _exp
     VPOP.F32 {S1-S3}
     POP  {LR}
+BX LR
+
+_log10:
+    PUSH {LR}
+    VPUSH.F32 {S1-S6}
+    LDR R1, =ten
+    VLDR S6, [R1]
+    @Perserve S0
+    VMOV.F32 S4, S0
+
+    BL _ln
+
+    VMOV.F32 S5, S0
+
+    VMOV.F32 S0, S6
+
+    BL _ln
+    
+    VDIV.F32 S0, S5, S0
+
+
+    VPOP.F32 {S1-S6}
+    POP {LR}
 BX LR
