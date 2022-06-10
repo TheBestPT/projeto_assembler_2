@@ -16,7 +16,7 @@
 .balign 4
     testInt: .asciz "%d"
 .balign
-    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n\nEscolha uma opção: "
+    mainMenu: .asciz "Menu\n1 - sqrt\n2 - fabs\n3 - fatorial\n4 - exp\n5 - sinh\n6 - cosh\n7 - tanh\n8 - hypot\n9 - powint\n10 - ldexp\n11 - ln\n12 - pow\n\nEscolha uma opção: "
 .align 4
     zero: .single 0.0
 .align 4
@@ -38,6 +38,8 @@ SQRT VARIABLES
     sqrt_print: .asciz "Insert (x) value for sqrt(x): "
 .align 4
     numero: .fill 3, 4, 0
+.align 4
+    numero1: .fill 3, 4, 0
 .balign 4 
     scanfp: .asciz "%f"
 .align 4
@@ -102,6 +104,19 @@ LN VARIABLES
 .align 4
     lnlimit: .single 1000.0
 
+/*
+POW VARIABLES
+ */
+.align 4
+    pow_base_print: .asciz "Insert (x) value for base of pow(x): "
+.align 4
+    pow_expon_print: .asciz "Insert (x) value for exponent of pow(y): "
+.align 4
+    pow_base: .fill 3, 4, 0
+.align 4
+    pow_exponent: .fill 3, 4, 0
+
+
 @External C functions
 .global scanf
 .global printf
@@ -165,6 +180,9 @@ main:
 
     CMP R0, #11
     BLEQ _callLn
+
+    CMP R0, #12
+    BLEQ _callPow
 
     POP {LR}
     BX LR
@@ -443,6 +461,40 @@ _callLn:
     POP {R0, LR}
 BX LR
 
+_callPow:
+    PUSH {R0, LR}
+    LDR R0, =pow_base_print
+    BL printf
+
+    LDR R1, =pow_base
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R0, =pow_expon_print
+    BL printf
+
+    LDR R1, =pow_exponent
+    LDR R0, =scanfp
+    BL scanf
+
+    LDR R1, =pow_base
+    VLDR S0, [R1]
+
+    LDR R1, =pow_exponent
+    VLDR S1, [R1]
+
+    BL _pow
+
+    @BL _exp
+
+    
+
+    VCVT.F64.F32 D0, S0
+    VMOV R1, R2, D0
+    LDR R0, =resultado
+    BL printf
+    POP {R0, LR}
+BX LR
 
 //---------------------------------------------------------------------------------------------
 
@@ -457,6 +509,7 @@ BX LR
 */
 _sqrt:
     PUSH {LR}
+    VPUSH.F32 {S1-S5}
     LDR R0, =val1
     VLDR S1, [R0] @ K value
 
@@ -480,6 +533,7 @@ _sqrt:
     BGT _sqrt_loop
 
     VMOV.F32 S0, S2
+    VPOP.F32 {S1-S5}
     POP {LR}
 BX LR
 
@@ -899,7 +953,7 @@ BX LR
     S0 - mul number
     S1 - exponent
  */
- /*
+ 
 _ldexp:
     PUSH {LR}
     LDR R1, =dois
@@ -915,15 +969,15 @@ _ldexp:
     VMOV.F32 S5, S0
 
     @s0 - exponent base
-    VMOV.F32 SO, S2
+    //VMOV.F32 SO, S2
 
-    BL _powAllInt
+    BL _powInt2
 
     
 
 
     POP {LR}
-BX LR*/
+BX LR
 
 
 /*
@@ -1023,4 +1077,42 @@ _ln:
     //VMOV.F32 S0, S6
     VPOP.F32 {S1-S13}
     POP {LR}
+BX LR
+
+/*_pow:
+    PUSH {LR}
+    VPUSH.F32 {S2-S3}
+
+    @Peserve base
+    VMOV.F32 S2, S0
+
+    @ln
+    //VMOV.F32 S0, S1 
+    BL _ln
+
+
+    VMUL.F32 S3, S1, S0
+
+    VMOV.F32 S0, S3
+    BL _exp
+    //VMOV.F32 S0, S3
+    VPOP.F32 {S2-S3}
+    POP {LR}
+BX LR*/
+
+
+_pow:
+    PUSH {LR}
+    VPUSH.F32 {S1-S3}
+    BL   _ln
+    VPOP.F32 {S1-S3}
+  
+
+    VMUL.F32 S2, S0, S1
+    VMOV.F32 S0, S2
+
+    VPUSH.F32 {S1-S3}
+    BL   _exp
+    VPOP.F32 {S1-S3}
+    POP  {LR}
 BX LR
